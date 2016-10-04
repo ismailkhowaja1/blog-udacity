@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+<form method="post" class="text-center">
+    <label>
+        <div>title</div>
+        <input type="text" name="title" value="{{title}}">
+    </label>
+    <br>
+    <label for="">
+        <div>Content</div>
+        <textarea name="content" value="content" id="" cols="80" rows="10"></textarea>
+        <input type="hidden" name="author" value="{{user.username}}">
+    </label>
+
+    <div>{{error}}</div>
+
+    <button class="btn btn-success">Submit</button>
+    <a class="btn btn-danger" href="/">cancel</a>
+</form>
+
+{% endblock %}
+
+

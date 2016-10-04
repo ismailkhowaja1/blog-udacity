@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up</title>
+</head>
+<body>
+
+<h1>Signups</h1>
+
+<form method="post">
+    <label for="">Username <br>
+        <input type="text" name="username" value="{{username}}">
+        {{error_username}}
+    </label>
+
+    <br>
+    <label for="">Password<br>
+        <input type="password" name="user_pwd" value="">
+        {{error_password}}
+    </label>
+
+    <br>
+    <label for="">verifyPassword<br>
+        <input type="password" name="verify_user_pwd" value="">
+        {{error_verify}}
+    </label>
+
+    <br>
+    <label for="">email(optional)<br>
+        <input type="email" name="email" value="{{user_email}}">
+        {{error_email}}
+    </label>
+
+    <br>
+    <button type="submit">Sign up</button>
+</form>
+</body>
+</html>

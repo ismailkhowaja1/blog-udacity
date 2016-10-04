@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>my Blog</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="/stylesheets/main.css">
+</head>
+<body>
+
+<div class="header">
+    <a class="text-center" href="/"><h1>Blog</h1></a>
+    {% if user %}
+    <h3>Logged in: {{user.username}}</h3>
+    <a class="btn btn-danger" href="/logout">log out</a>
+    {% else %}
+    <a class="btn btn-primary" href="/signup">Sign up</a>
+    <a class="btn btn-info" href="/login">Log in</a>
+    {% endif %}
+    <br>
+    <a class="btn btn-success" href="/newpost">Add a new post</a>
+
+
+</div>
+
+
+<div id="newpost">
+    {% block content %}
+    {% endblock %}
+</div>
+
+<div id="posts">
+    {% block posts %}
+    {% endblock %}
+</div>
+
+<div class="center-block">
+    {% block edit %}
+    {% endblock %}
+</div>
+
+<div id="add-comment">
+    {% block comment %}
+    {% endblock %}
+</div>
+
+<div id="signin">
+    {% block login %}
+    {% endblock %}
+</div>
+
+</body>
+</html>

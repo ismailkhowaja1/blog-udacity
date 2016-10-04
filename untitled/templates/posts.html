@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+
+{% block posts %}
+
+<h2 class="text-center">Blog posts</h2>
+
+{% for post in posts %}
+<div class="container">
+    <hr>
+    <blockquote class="clearfix">
+        <div class="post-title pull-left">
+            <u><h2>{{post.title}}</h2></u>
+            <footer>Written by<cite title="Source Title">{{post.author}}</cite></footer>
+        </div>
+
+        <div class="pull-right">
+            <p>{{post.created | datetimeformat }}</p>
+            <span>Likes {{post.likes}}</span>
+            {% if user.username != post.author %}
+            <a href="/like/{{post.key().id()}}">Like</a>
+            {% endif %}
+        </div>
+    </blockquote>
+    <div class="post-body"><p>{{post.content| letitpass | safe }}</p></div>
+
+
+    <div>
+        <a href="/delete/{{post.key().id()}}">delete</a>
+        <a href="/edit/{{post.key().id()}}">edit</a>
+        <a href="/comment/{{post.key().id()}}">comment</a>
+        {{error_comment1}}
+    </div>
+
+    <div id="comments" style="background-color: aquamarine">
+        <h3 class="text-center">Comments</h3>
+        {% for comment in post.comments %}
+        <div class="comment clearfix">
+            <p class="pull-left">{{comment}}</p>
+        </div>
+        <hr>
+        {% endfor %}
+    </div>
+
+    <hr>
+</div>
+{% endfor %}
+{% endblock %}

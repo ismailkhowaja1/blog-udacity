@@ -28,7 +28,19 @@ from google.appengine.ext import db
 
 # setting jinja env to get templates
 template_dir = os.path.join(os.path.dirname(__file__), "templates")
-jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir), autoescape=True)
+jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
+                               autoescape=True)
+
+
+def contains(list, value):
+    found = False
+    for i in list:
+        if value == i:
+            found = True
+    return found
+
+
+jinja_env.globals['contains'] = contains
 
 
 # ---Filters for formatting ---
@@ -69,18 +81,25 @@ def check_secure_val(secure_val):
             return val
 
 
-# class to create blog post with title, content, when was created, author, how many likes, how many comments
+# class to create blog post with title, content
+# when was created, author,
+# how many likes, how many comments
+
 class BlogPost(db.Model):
     title = db.StringProperty(required=True)
     content = db.TextProperty(required=True)
     created = db.DateTimeProperty(auto_now_add=True)
     author = db.StringProperty(required=True)
     likes = db.IntegerProperty(default=0)
-    comments = db.ListProperty(str)
+    liked_by = db.ListProperty(item_type=str)
 
     # class method to render post
     def render(self):
         return render_str("post.html", p=self)
+
+    @property
+    def comments(self):
+        return NewComment.all().filter("post = ", str(self.key().id()))
 
 
 # user methods
@@ -186,23 +205,31 @@ class NewPostHandler(BlogHandler):
     # render the new post in blog
     def render_newpost(self, title="", content="", error=""):
         if self.user:
-            self.render("newpost.html", title=title, content=content, error=error)
+            self.render("newpost.html",
+                        title=title,
+                        content=content,
+                        error=error)
         else:
             self.redirect("/login")
 
     def get(self):
         self.render_newpost()
 
-    # this method will get the values from newpost. and create a blogpost and save in database
+    """"""
+    # this method will get the values from newpost.
+    #  and create a blogpost and save in database
     def post(self):
         if not self.user:
-            self.redirect("/login")
+            return self.redirect("/login")
         title = self.request.get("title")
         content = self.request.get("content")
         author = self.request.get("author")
 
         if title and content:
-            b = BlogPost(title=title, content=content, author=author, likes=0)
+            b = BlogPost(title=title,
+                         content=content,
+                         author=author,
+                         likes=0)
             # inserting blog post in database
             b.put()
             self.redirect('/%s' % str(b.key().id()))
@@ -211,12 +238,21 @@ class NewPostHandler(BlogHandler):
             self.render_newpost(title, content, error)
 
 
+class NewComment(db.Model):
+    comment = db.StringProperty(required=True)
+    post = db.StringProperty(required=True)
+
+
 # this handler helps to render the posts in database
 class MainHandler(BlogHandler):
     def render_posts(self, title="", content="", error=""):
         posts = db.GqlQuery("SELECT * FROM BlogPost "
                             "ORDER BY created DESC limit 10")
-        self.render("posts.html", title=title, content=content, posts=posts, error=error)
+        self.render("posts.html",
+                    title=title,
+                    content=content,
+                    posts=posts,
+                    error=error)
 
     def get(self):
         self.render_posts()
@@ -401,9 +437,15 @@ class Like(BlogHandler):
         if self.user:
             key = db.Key.from_path('BlogPost', int(post_id))
             post = db.get(key)
-            if post:
+            if post and contains(post.liked_by, self.user.username):
                 post.likes = post.likes + 1
                 post.put()
+                post.liked_by.append(self.user.username)
+                print post.liked_by
+                self.redirect("/")
+            else:
+                msg = "you cannot like more than one"
+                self.render('posts.html', error=msg)
                 self.redirect("/")
         else:
             self.redirect("/login")
@@ -418,8 +460,6 @@ class Comment(BlogHandler):
                 self.error(404)
                 return
             if post.author == self.user.username:
-                error_comment1 = "you cannot comment on your own post"
-                self.render("posts.html", error_comment1=error_comment1)
                 self.redirect("/")
             self.render("comment.html", post=post)
         else:
@@ -435,15 +475,16 @@ class Comment(BlogHandler):
                 return
             if post.author == self.user.username:
                 self.redirect("/")
-                error_comment1 = "you cannot comment on your own post"
-                self.render("posts.html", error_comment1=error_comment1)
             if comment == "":
                 error_comment = "You cannot left blanks empty"
-                self.render("comment.html", error_comment=error_comment, post=post)
+                self.render("comment.html",
+                            error_comment=error_comment,
+                            post=post)
             else:
-                post.comments.append(comment)
-                post.put()
+                c = NewComment(comment=comment, post=post_id)
+                c.put()
                 self.redirect("/")
+                print post.comments
         else:
             self.redirect('/login')
 

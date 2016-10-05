@@ -4,7 +4,8 @@
 <div class="form-group text-center">
     <form action="" method="post">
         <h2>add a comment</h2>
-        <textarea name="comment" id="" cols="30" rows="10">{{comment}}</textarea>
+        <textarea name="comment" id="" cols="30" rows="10">{{comment | letitpass}}</textarea>
+        <input type="hidden" name="commented_by" value="{{user.username}}">
         <br>
         {{error_comment}}
         <br>

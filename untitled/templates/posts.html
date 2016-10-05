@@ -22,7 +22,10 @@
             {% elif user.username == post.author %}
                 <a class="btn btn-success disabled" href="/like/{{post.key().id()}}">Like</a>
             {% endif %}
-            <p>{{error}}</p>
+
+            {% if user.username in post.liked_by %}
+                <p>one Like allowed</p>
+            {% endif %}
         </div>
     </blockquote>
     <div class="post-body"><p>{{post.content| letitpass | safe }}</p></div>
@@ -44,8 +47,15 @@
         <h3 class="text-center">Comments</h3>
         {% for comment in post.comments %}
         <div class="comment clearfix" style="background-color: cyan">
-            <p class="pull-left">{{comment.comment}}</p>
-            <p class="pull-right">{{comment.parent().username}}</p>
+            <p class="pull-left">{{comment.comment | letitpass | safe}}</p>
+            <div class="pull-right">
+                <p class="pull-right">Commented by: {{comment.commented_by}}</p>
+                <br>
+                <a class="btn btn-info" href="updatecomment/{{comment.key().id()}}">Update comment</a>
+                <br>
+                <a class="btn btn-danger" href="/deletecomment/{{comment.key().id()}}">Delete Comment</a>
+            </div>
+
         </div>
         <hr>
         {% endfor %}

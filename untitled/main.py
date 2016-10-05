@@ -32,17 +32,6 @@ jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
                                autoescape=True)
 
 
-def contains(list, value):
-    found = False
-    for i in list:
-        if value == i:
-            found = True
-    return found
-
-
-jinja_env.globals['contains'] = contains
-
-
 # ---Filters for formatting ---
 
 # replacing new line with br tag
@@ -80,6 +69,22 @@ def check_secure_val(secure_val):
         if secure_val == make_secure_val(val):
             return val
 
+# user methods
+def make_salt():
+    return ''.join(random.choice(string.letters) for x in xrange(5))
+
+# make the password hash to enhance security
+def make_pw_hash(name, pw, salt=None):
+    if not salt:
+        salt = make_salt()
+    hashval = hashlib.sha256(name + pw + salt).hexdigest()
+    return "%s,%s" % (salt, hashval)
+
+# check the password validity for login purposes
+def valid_pw(name, pw, h):
+    salt = h.split(',')[0]
+    return h == make_pw_hash(name, pw, salt)
+
 
 # class to create blog post with title, content
 # when was created, author,
@@ -102,23 +107,10 @@ class BlogPost(db.Model):
         return NewComment.all().filter("post = ", str(self.key().id()))
 
 
-# user methods
-def make_salt():
-    return ''.join(random.choice(string.letters) for x in xrange(5))
-
-
-# make the password hash to enhance security
-def make_pw_hash(name, pw, salt=None):
-    if not salt:
-        salt = make_salt()
-    hashval = hashlib.sha256(name + pw + salt).hexdigest()
-    return "%s,%s" % (salt, hashval)
-
-
-# check the password validity for login purposes
-def valid_pw(name, pw, h):
-    salt = h.split(',')[0]
-    return h == make_pw_hash(name, pw, salt)
+class NewComment(db.Model):
+    comment = db.TextProperty()
+    post = db.StringProperty(required=True)
+    commented_by = db.StringProperty()
 
 
 # user class to create user object with name, password, email
@@ -236,11 +228,6 @@ class NewPostHandler(BlogHandler):
         else:
             error = "we need both title and content"
             self.render_newpost(title, content, error)
-
-
-class NewComment(db.Model):
-    comment = db.StringProperty(required=True)
-    post = db.StringProperty(required=True)
 
 
 # this handler helps to render the posts in database
@@ -412,24 +399,29 @@ class Edit(BlogHandler):
             self.redirect("/login")
 
     def post(self, post_id):
-        newTitle = self.request.get("title")
-        newContent = self.request.get("content")
-        key = db.Key.from_path('BlogPost', int(post_id))
-        post = db.get(key)
-        if not post:
-            self.error(404)
-            return
-        if self.user.username == post.author:
-            if newTitle == "" and newContent == "":
-                error_edit = "You cannot left blanks empty"
-                self.render("editpost.html", error_edit=error_edit, post=post)
+        if self.user:
+            newTitle = self.request.get("title")
+            newContent = self.request.get("content")
+            key = db.Key.from_path('BlogPost', int(post_id))
+            post = db.get(key)
+            if not post:
+                self.error(404)
+                return
+            if self.user.username == post.author:
+                if newTitle == "" and newContent == "":
+                    error_edit = "You cannot left blanks empty"
+                    self.render("editpost.html",
+                                error_edit=error_edit,
+                                post=post)
+                else:
+                    post.title = newTitle
+                    post.content = newContent
+                    post.put()
+                    self.redirect("/%s" % str(post.key().id()))
             else:
-                post.title = newTitle
-                post.content = newContent
-                post.put()
-                self.redirect("/%s" % str(post.key().id()))
+                self.redirect('/login')
         else:
-            self.redirect('/login')
+            self.redirect("/login")
 
 
 class Like(BlogHandler):
@@ -437,15 +429,14 @@ class Like(BlogHandler):
         if self.user:
             key = db.Key.from_path('BlogPost', int(post_id))
             post = db.get(key)
-            if post and contains(post.liked_by, self.user.username):
+            if post and self.user.username not in post.liked_by:
                 post.likes = post.likes + 1
-                post.put()
                 post.liked_by.append(self.user.username)
-                print post.liked_by
+                post.put()
                 self.redirect("/")
             else:
                 msg = "you cannot like more than one"
-                self.render('posts.html', error=msg)
+                self.render('/posts.html', error=msg)
                 self.redirect("/")
         else:
             self.redirect("/login")
@@ -461,7 +452,7 @@ class Comment(BlogHandler):
                 return
             if post.author == self.user.username:
                 self.redirect("/")
-            self.render("comment.html", post=post)
+            self.render("comment.html", post=post, comment="")
         else:
             self.redirect("/login")
 
@@ -479,14 +470,64 @@ class Comment(BlogHandler):
                 error_comment = "You cannot left blanks empty"
                 self.render("comment.html",
                             error_comment=error_comment,
-                            post=post)
+                            post=post, comment=comment)
             else:
-                c = NewComment(comment=comment, post=post_id)
+                commented_by = self.request.get("commented_by")
+                c = NewComment(comment=comment,
+                               post=post_id,
+                               commented_by=commented_by)
                 c.put()
+
                 self.redirect("/")
-                print post.comments
         else:
             self.redirect('/login')
+
+class UpdateComment(BlogHandler):
+    def get(self, comment_id):
+        if self.user:
+            key = db.Key.from_path('NewComment', int(comment_id))
+            comment = db.get(key)
+            self.render("updatecomment.html", comment=comment)
+
+    def post(self, comment_id):
+        if self.user:
+            updated_cmnt = self.request.get("updated_comment")
+            key = db.Key.from_path('NewComment', int(comment_id))
+            comment = db.get(key)
+            if not comment:
+                self.error(404)
+                return
+            if self.user.username == comment.commented_by:
+                if updated_cmnt != "" and comment.comment != "":
+                    comment.comment = updated_cmnt
+                    print updated_cmnt + "saddad"
+                    comment.put()
+                    self.redirect("/")
+                else:
+                    error = "you cannot leave blanks empty"
+                    self.render("updatecomment.html",
+                                error_update=error, comment=comment)
+
+            else:
+                error = "you cannot update some one else comment"
+                self.render("updatecomment.html", error_update=error)
+        else:
+            self.redirect("/login")
+
+
+class DeleteComment(BlogHandler):
+    def get(self, comment_id):
+        if self.user:
+            key = db.Key.from_path("NewComment", int(comment_id))
+            comment = db.get(key)
+            if comment and comment.commented_by == self.user.username:
+                deleted = comment.comment
+                self.render("deletecomment.html", deleted=deleted)
+                comment.delete()
+            else:
+                self.redirect("/login")
+        else:
+            self.redirect("/login")
 
 
 # handle handlers
@@ -501,6 +542,8 @@ app = webapp2.WSGIApplication([
     ('/([0-9]+)', PostPage),
     ('/edit/([0-9]+)', Edit),
     ('/like/([0-9]+)', Like),
-    ('/comment/([0-9]+)', Comment)
+    ('/comment/([0-9]+)', Comment),
+    ('/updatecomment/([0-9]+)', UpdateComment),
+    ('/deletecomment/([0-9]+)', DeleteComment)
 
 ], debug=True)

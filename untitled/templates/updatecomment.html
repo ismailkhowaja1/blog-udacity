@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+    {% block updatecomment %}
+    <h1>Update Comment</h1>
+    <form action="" method="post">
+        <textarea name="updated_comment" id="" cols="30" rows="10">{{comment.comment}}</textarea>
+        <br>
+        <button class="btn btn-success">Update comment</button>
+        <br>
+        {{error_update}}
+        {{error_edit}}
+    </form>
+    {% endblock %}
+

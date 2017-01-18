@@ -32,8 +32,8 @@
 
 
     <div>
-        <a href="/delete/{{post.key().id()}}">delete</a>
-        <a href="/edit/{{post.key().id()}}">edit</a>
+        <a class="btn btn-danger" href="/delete/{{post.key().id()}}">delete</a>
+        <a class="btn btn-warning" href="/edit/{{post.key().id()}}">edit</a>
         {% if user.username != post.author %}
             <a class="btn btn-info" href="/comment/{{post.key().id()}}">comment</a>
         {% else %}
@@ -43,11 +43,11 @@
         {{error_comment1}}
     </div>
 
-    <div id="comments" style="background-color: aquamarine">
+    <div id="comments">
         <h3 class="text-center">Comments</h3>
         {% for comment in post.comments %}
-        <div class="comment clearfix" style="background-color: cyan">
-            <p class="pull-left">{{comment.comment | letitpass | safe}}</p>
+        <div class="comment clearfix">
+            <p class="cmnt-content pull-left">{{comment.comment | letitpass | safe}}</p>
             <div class="pull-right">
                 <p class="pull-right">Commented by: {{comment.commented_by}}</p>
                 <br>

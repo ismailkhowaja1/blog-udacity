@@ -1,3 +1,32 @@
 body {
     background-color: ivory;
 }
+
+#header-btn {
+	margin: 1%;
+}
+
+.post-body {
+	margin-left: 2%;
+    margin-bottom: 2%;
+    border: 1px solid aqua;
+    background: honeydew;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: large;
+}
+
+#comments {
+	background-color: white;
+	font-family: 'Source Sans Pro', sans-serif;
+    font-size: large;
+	height: 300px;
+	overflow: auto;
+}
+
+.comment {
+	border: 1px solid black;
+}
+
+.cmnt-content {
+	margin-left: 1%;
+}
